@@ -1,13 +1,15 @@
 import { state } from './state.js';
+import { Solver } from '../simulation/solver.js';
 
 export class Renderer {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
-        this.resize();
+        this.lastTime = performance.now(); // Timing for smooth rotation
         
+        this.resize();
         window.addEventListener('resize', () => this.resize());
-        this.renderLoop();
+        this.renderLoop(this.lastTime);
     }
 
     resize() {
@@ -29,7 +31,15 @@ export class Renderer {
         };
     }
 
-    renderLoop() {
+    renderLoop(currentTime) {
+        // Calculate time elapsed since last frame
+        const deltaTime = currentTime - this.lastTime;
+        this.lastTime = currentTime;
+
+        // 1. Run physics/simulation
+        Solver.update(deltaTime);
+
+        // 2. Clear and Render
         this.clear();
         
         this.ctx.save();
@@ -42,7 +52,7 @@ export class Renderer {
 
         this.ctx.restore();
 
-        requestAnimationFrame(() => this.renderLoop());
+        requestAnimationFrame((time) => this.renderLoop(time));
     }
 
     clear() {
@@ -82,7 +92,6 @@ export class Renderer {
     }
 
     drawComponents() {
-        // CRITICAL UPDATE: Compute selection state here
         state.components.forEach(comp => {
             const isSelected = (state.ui.selectedId === comp.id);
             if (comp.render) comp.render(this.ctx, isSelected);
