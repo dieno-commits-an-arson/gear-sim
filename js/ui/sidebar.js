@@ -32,6 +32,9 @@ export class Sidebar {
                 <label style="font-size:12px; color:#aaa;">Radius</label>
                 <input type="number" id="prop-radius" value="${comp.properties.radius}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
                 
+                <label style="font-size:12px; color:#aaa;">Teeth</label>
+                <input type="number" id="prop-teeth" value="${comp.properties.teeth}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
+                
                 <div style="color:#d4a373; text-transform:uppercase; font-size: 11px; letter-spacing: 1px; margin-top: 10px;">
                     Simulation Profile
                 </div>
@@ -48,10 +51,15 @@ export class Sidebar {
             </div>
         `;
 
+        // Coordinate listeners
         document.getElementById('prop-x').addEventListener('input', (e) => { comp.x = parseFloat(e.target.value) || 0; window.dispatchEvent(new CustomEvent('componentMoved')); });
         document.getElementById('prop-y').addEventListener('input', (e) => { comp.y = parseFloat(e.target.value) || 0; window.dispatchEvent(new CustomEvent('componentMoved')); });
-        document.getElementById('prop-radius').addEventListener('input', (e) => comp.properties.radius = parseFloat(e.target.value) || 10);
         
+        // Geometry listeners
+        document.getElementById('prop-radius').addEventListener('input', (e) => comp.properties.radius = parseFloat(e.target.value) || 10);
+        document.getElementById('prop-teeth').addEventListener('input', (e) => comp.properties.teeth = parseFloat(e.target.value) || 4); // Restored
+        
+        // Simulation listeners
         const speedContainer = document.getElementById('driver-speed-container');
         document.getElementById('prop-is-driver').addEventListener('change', (e) => {
             comp.properties.isDriver = e.target.checked;
