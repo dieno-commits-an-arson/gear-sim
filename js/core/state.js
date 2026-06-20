@@ -1,12 +1,12 @@
 // Central Application State
 export const state = {
-    components: [],   // Gears, Motors, Shafts
-    connections: [],  // Gear meshes, belts
+    components: [],   
+    connections: [],  
     
     viewport: {
-        x: 0,         // Pan X
-        y: 0,         // Pan Y
-        zoom: 1       // Zoom level
+        x: 0,         
+        y: 0,         
+        zoom: 1       
     },
     
     ui: {
@@ -14,10 +14,14 @@ export const state = {
         selectedId: null,
         showGrid: true,
         gridSize: 50
+    },
+
+    // NEW: Simulation state
+    sim: {
+        isPlaying: false
     }
 };
 
-// Pure utility for components
 export function generateUUID() {
     return crypto.randomUUID ? crypto.randomUUID() : 
            'xxxx-xxxx-4xxx-yxxx'.replace(/[xy]/g, c => {
