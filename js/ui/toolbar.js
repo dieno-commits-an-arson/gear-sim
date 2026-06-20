@@ -19,6 +19,7 @@ export class Toolbar {
         for (const [toolName, btn] of Object.entries(this.buttons)) {
             btn.addEventListener('click', () => this.setTool(toolName));
         }
+        document.getElementById('sim-play').addEventListener('click', () => { state.sim.isPlaying = !state.sim.isPlaying; document.getElementById('sim-play').innerText = state.sim.isPlaying ? '⏸ Pause' : '▶ Play'; });)
     }
 
     setTool(toolName) {
