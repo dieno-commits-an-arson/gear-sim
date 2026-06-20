@@ -16,10 +16,12 @@ export const state = {
         gridSize: 50
     },
 
-    // NEW: Simulation state
     sim: {
         isPlaying: false
-    }
+    },
+
+    // NEW: Global clipboard for copy/paste
+    clipboard: null
 };
 
 export function generateUUID() {
