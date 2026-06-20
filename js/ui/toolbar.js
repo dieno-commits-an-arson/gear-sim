@@ -11,6 +11,8 @@ export class Toolbar {
             'gear': document.getElementById('tool-gear')
         };
 
+        this.simPlayBtn = document.getElementById('sim-play');
+
         this.bindEvents();
         this.setTool('select'); // Default active tool
     }
@@ -19,9 +21,21 @@ export class Toolbar {
         for (const [toolName, btn] of Object.entries(this.buttons)) {
             btn.addEventListener('click', () => this.setTool(toolName));
         }
-        document.getElementById('sim-play').addEventListener('click', () => { 
+
+        // SIMULATION PLAY/PAUSE LOGIC
+        this.simPlayBtn.addEventListener('click', () => {
             state.sim.isPlaying = !state.sim.isPlaying;
-            document.getElementById('sim-play').innerText = state.sim.isPlaying ? '⏸ Pause' : '▶ Play'; });
+            
+            if (state.sim.isPlaying) {
+                this.simPlayBtn.innerHTML = '⏸ Pause';
+                this.simPlayBtn.style.background = '#dc3545'; // Red
+                this.simPlayBtn.style.borderColor = '#c82333';
+            } else {
+                this.simPlayBtn.innerHTML = '▶ Play';
+                this.simPlayBtn.style.background = '#28a745'; // Green
+                this.simPlayBtn.style.borderColor = '#218838';
+            }
+        });
     }
 
     setTool(toolName) {
@@ -34,7 +48,7 @@ export class Toolbar {
             this.buttons[toolName].classList.add('active');
         }
 
-        // UX FIX: Change the mouse cursor so the user knows they need to click the canvas
+        // UX Fix
         if (toolName === 'gear') {
             this.canvas.style.cursor = 'crosshair';
         } else {
