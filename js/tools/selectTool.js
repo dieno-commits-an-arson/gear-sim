@@ -10,7 +10,6 @@ export class SelectTool {
         state.ui.selectedId = null; 
         this.draggingComponent = null;
 
-        // Iterate backwards to interact with the top-most visual component
         for (let i = state.components.length - 1; i >= 0; i--) {
             const comp = state.components[i];
             
@@ -18,14 +17,11 @@ export class SelectTool {
                 state.ui.selectedId = comp.id;
                 this.draggingComponent = comp;
                 
-                // Calculate grab offset so the gear doesn't snap its center to the cursor
                 this.dragOffset.x = comp.x - worldPos.x;
                 this.dragOffset.y = comp.y - worldPos.y;
                 break;
             }
         }
-        
-        // Ping the UI layer to update the sidebar
         window.dispatchEvent(new CustomEvent('selectionChanged'));
     }
 
@@ -33,14 +29,43 @@ export class SelectTool {
         if (this.draggingComponent) {
             this.draggingComponent.x = worldPos.x + this.dragOffset.x;
             this.draggingComponent.y = worldPos.y + this.dragOffset.y;
-            
-            // Ping the UI to update the live coordinate numbers in the sidebar
             window.dispatchEvent(new CustomEvent('componentMoved'));
         }
     }
 
     pointerUp(e, worldPos) {
-        // Release the gear
+        if (this.draggingComponent && this.draggingComponent.type === 'gear') {
+            this.snapToNearestGear();
+        }
         this.draggingComponent = null;
+    }
+
+    // MAGNETIC SNAPPING LOGIC
+    snapToNearestGear() {
+        const current = this.draggingComponent;
+        const snapThreshold = 15; // Pixels of magnetic pull
+
+        for (const other of state.components) {
+            if (other.id === current.id || other.type !== 'gear') continue;
+
+            const dx = current.x - other.x;
+            const dy = current.y - other.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Perfect meshing distance is the sum of their radiuses
+            const targetDistance = current.properties.radius + other.properties.radius;
+
+            if (Math.abs(distance - targetDistance) < snapThreshold) {
+                // Calculate the angle between the two gears
+                const angle = Math.atan2(dy, dx);
+                
+                // Snap X and Y precisely to the target distance along that vector
+                current.x = other.x + Math.cos(angle) * targetDistance;
+                current.y = other.y + Math.sin(angle) * targetDistance;
+                
+                window.dispatchEvent(new CustomEvent('componentMoved'));
+                break; // Only snap to one gear at a time
+            }
+        }
     }
 }
