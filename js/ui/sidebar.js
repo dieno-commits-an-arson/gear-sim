@@ -48,18 +48,21 @@ export class Sidebar {
                     <label style="font-size:12px; color:#aaa;">Motor Speed (RPM)</label>
                     <input type="number" id="prop-speed" value="${comp.properties.driverSpeed}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
                 </div>
+
+                <hr style="border-color: #444; margin: 10px 0;">
+                
+                <button id="btn-delete" style="background: #dc3545; color: white; border: 1px solid #c82333; padding: 8px; border-radius: 4px; cursor: pointer; transition: 0.2s;">
+                    🗑️ Delete Component
+                </button>
             </div>
         `;
 
-        // Coordinate listeners
         document.getElementById('prop-x').addEventListener('input', (e) => { comp.x = parseFloat(e.target.value) || 0; window.dispatchEvent(new CustomEvent('componentMoved')); });
         document.getElementById('prop-y').addEventListener('input', (e) => { comp.y = parseFloat(e.target.value) || 0; window.dispatchEvent(new CustomEvent('componentMoved')); });
         
-        // Geometry listeners
         document.getElementById('prop-radius').addEventListener('input', (e) => comp.properties.radius = parseFloat(e.target.value) || 10);
-        document.getElementById('prop-teeth').addEventListener('input', (e) => comp.properties.teeth = parseFloat(e.target.value) || 4); // Restored
+        document.getElementById('prop-teeth').addEventListener('input', (e) => comp.properties.teeth = parseFloat(e.target.value) || 4); 
         
-        // Simulation listeners
         const speedContainer = document.getElementById('driver-speed-container');
         document.getElementById('prop-is-driver').addEventListener('change', (e) => {
             comp.properties.isDriver = e.target.checked;
@@ -67,6 +70,13 @@ export class Sidebar {
         });
 
         document.getElementById('prop-speed').addEventListener('input', (e) => comp.properties.driverSpeed = parseFloat(e.target.value) || 0);
+
+        // NEW: Delete Button Logic
+        document.getElementById('btn-delete').addEventListener('click', () => {
+            state.components = state.components.filter(c => c.id !== state.ui.selectedId);
+            state.ui.selectedId = null;
+            window.dispatchEvent(new CustomEvent('selectionChanged'));
+        });
     }
 
     updateLiveValues() {
