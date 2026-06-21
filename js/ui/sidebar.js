@@ -9,12 +9,37 @@ export class Sidebar {
     }
 
     render() {
-        if (!state.ui.selectedId) {
+        const count = state.ui.selectedIds.length;
+
+        if (count === 0) {
             this.content.innerHTML = '<p style="color: #888;">No selection</p>';
             return;
         }
 
-        const comp = state.components.find(c => c.id === state.ui.selectedId);
+        if (count > 1) {
+            // MULTI-SELECT UI
+            this.content.innerHTML = `
+                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="color:#00a8ff; text-transform:uppercase; font-size: 11px; letter-spacing: 1px;">
+                        Multiple Selected
+                    </div>
+                    <p style="font-size: 13px; color: #ccc;">${count} components selected.</p>
+                    <hr style="border-color: #444; margin: 10px 0;">
+                    <button id="btn-delete" style="background: #dc3545; color: white; border: 1px solid #c82333; padding: 8px; border-radius: 4px; cursor: pointer; transition: 0.2s;">
+                        🗑️ Delete Assembly
+                    </button>
+                </div>
+            `;
+            document.getElementById('btn-delete').addEventListener('click', () => {
+                state.components = state.components.filter(c => !state.ui.selectedIds.includes(c.id));
+                state.ui.selectedIds = [];
+                window.dispatchEvent(new CustomEvent('selectionChanged'));
+            });
+            return;
+        }
+
+        // SINGLE-SELECT UI
+        const comp = state.components.find(c => c.id === state.ui.selectedIds[0]);
         if (!comp) return;
 
         this.content.innerHTML = `
@@ -23,10 +48,10 @@ export class Sidebar {
                     ${comp.type} Geometry
                 </div>
                 
-                <label style="font-size:12px; color:#aaa;">X Coordinate (Axle)</label>
+                <label style="font-size:12px; color:#aaa;">X Coordinate</label>
                 <input type="number" id="prop-x" value="${Math.round(comp.x)}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
                 
-                <label style="font-size:12px; color:#aaa;">Y Coordinate (Axle)</label>
+                <label style="font-size:12px; color:#aaa;">Y Coordinate</label>
                 <input type="number" id="prop-y" value="${Math.round(comp.y)}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
                 
                 <label style="font-size:12px; color:#aaa;">Radius</label>
@@ -57,13 +82,11 @@ export class Sidebar {
             </div>
         `;
 
-        // Update ALL gears on the same axle when coordinates are manually typed
         document.getElementById('prop-x').addEventListener('input', (e) => { 
             const val = parseFloat(e.target.value) || 0;
             state.components.forEach(c => { if(c.properties.axleId === comp.properties.axleId) c.x = val; });
             window.dispatchEvent(new CustomEvent('componentMoved')); 
         });
-        
         document.getElementById('prop-y').addEventListener('input', (e) => { 
             const val = parseFloat(e.target.value) || 0;
             state.components.forEach(c => { if(c.properties.axleId === comp.properties.axleId) c.y = val; });
@@ -82,15 +105,15 @@ export class Sidebar {
         document.getElementById('prop-speed').addEventListener('input', (e) => comp.properties.driverSpeed = parseFloat(e.target.value) || 0);
 
         document.getElementById('btn-delete').addEventListener('click', () => {
-            state.components = state.components.filter(c => c.id !== state.ui.selectedId);
-            state.ui.selectedId = null;
+            state.components = state.components.filter(c => !state.ui.selectedIds.includes(c.id));
+            state.ui.selectedIds = [];
             window.dispatchEvent(new CustomEvent('selectionChanged'));
         });
     }
 
     updateLiveValues() {
-        if (!state.ui.selectedId) return;
-        const comp = state.components.find(c => c.id === state.ui.selectedId);
+        if (state.ui.selectedIds.length !== 1) return; // Only live-update if exactly one is selected
+        const comp = state.components.find(c => c.id === state.ui.selectedIds[0]);
         
         const inputX = document.getElementById('prop-x');
         const inputY = document.getElementById('prop-y');
