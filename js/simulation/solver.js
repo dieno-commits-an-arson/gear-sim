@@ -6,13 +6,10 @@ export class Solver {
 
         const gears = state.components.filter(c => c.type === 'gear');
 
-        // 1. Reset all speeds to 0 before calculating
         gears.forEach(g => {
             g.currentRpm = g.properties.isDriver ? g.properties.driverSpeed : 0;
         });
 
-        // 2. Build connection graph and propagate RPM
-        // Breadth-First Search starting from all Driver gears
         let queue = gears.filter(g => g.properties.isDriver);
         let visited = new Set(queue.map(g => g.id));
 
@@ -21,16 +18,27 @@ export class Solver {
 
             gears.forEach(other => {
                 if (!visited.has(other.id)) {
-                    // Check if gears are meshed (touching)
+                    
+                    // CASE 1: They are on the exact same Axle (Compound Gear)
+                    if (current.properties.axleId === other.properties.axleId) {
+                        // They spin at the exact same speed and direction
+                        other.currentRpm = current.currentRpm;
+                        other.rotation = current.rotation; // Lock their rotation sync perfectly
+                        
+                        visited.add(other.id);
+                        queue.push(other);
+                        return;
+                    }
+
+                    // CASE 2: They are meshed physically tooth-to-tooth
                     const dx = other.x - current.x;
                     const dy = other.y - current.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     const targetDist = current.properties.radius + other.properties.radius;
 
-                    // Allow a 1px tolerance for floating point math
                     if (Math.abs(dist - targetDist) <= 1.0) {
-                        // Apply Mechanical Gear Ratio Formula
                         const ratio = current.properties.radius / other.properties.radius;
+                        // They spin in opposite directions
                         other.currentRpm = current.currentRpm * -ratio;
 
                         visited.add(other.id);
@@ -40,11 +48,9 @@ export class Solver {
             });
         }
 
-        // 3. Apply angular rotation to all gears based on deltaTime
         const secondsPassed = deltaTime / 1000;
         gears.forEach(g => {
             if (g.currentRpm !== 0) {
-                // Convert RPM to Radians per second: RPM * (2PI / 60)
                 const radiansPerSec = g.currentRpm * (Math.PI / 30);
                 g.rotation += radiansPerSec * secondsPassed;
             }
