@@ -17,7 +17,6 @@ export class Sidebar {
         }
 
         if (count > 1) {
-            // MULTI-SELECT UI
             this.content.innerHTML = `
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                     <div style="color:#00a8ff; text-transform:uppercase; font-size: 11px; letter-spacing: 1px;">
@@ -38,7 +37,6 @@ export class Sidebar {
             return;
         }
 
-        // SINGLE-SELECT UI
         const comp = state.components.find(c => c.id === state.ui.selectedIds[0]);
         if (!comp) return;
 
@@ -48,11 +46,16 @@ export class Sidebar {
                     ${comp.type} Geometry
                 </div>
                 
-                <label style="font-size:12px; color:#aaa;">X Coordinate</label>
-                <input type="number" id="prop-x" value="${Math.round(comp.x)}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
-                
-                <label style="font-size:12px; color:#aaa;">Y Coordinate</label>
-                <input type="number" id="prop-y" value="${Math.round(comp.y)}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
+                <div style="display: flex; gap: 8px;">
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <label style="font-size:12px; color:#aaa; margin-bottom: 4px;">X Coor</label>
+                        <input type="number" id="prop-x" value="${Math.round(comp.x)}" style="width: 100%; box-sizing: border-box; background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <label style="font-size:12px; color:#aaa; margin-bottom: 4px;">Y Coor</label>
+                        <input type="number" id="prop-y" value="${Math.round(comp.y)}" style="width: 100%; box-sizing: border-box; background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
+                    </div>
+                </div>
                 
                 <label style="font-size:12px; color:#aaa;">Radius</label>
                 <input type="number" id="prop-radius" value="${comp.properties.radius}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
@@ -112,7 +115,7 @@ export class Sidebar {
     }
 
     updateLiveValues() {
-        if (state.ui.selectedIds.length !== 1) return; // Only live-update if exactly one is selected
+        if (state.ui.selectedIds.length !== 1) return;
         const comp = state.components.find(c => c.id === state.ui.selectedIds[0]);
         
         const inputX = document.getElementById('prop-x');
