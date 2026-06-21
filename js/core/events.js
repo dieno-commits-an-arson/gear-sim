@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state, generateUUID } from './state.js';
 import { Gear } from '../models/Gear.js';
 
 export class EventManager {
@@ -31,64 +31,71 @@ export class EventManager {
 
         // COMMAND: Delete
         if (e.key === 'Delete' || e.key === 'Backspace') {
-            if (state.ui.selectedId) {
-                state.components = state.components.filter(c => c.id !== state.ui.selectedId);
-                state.ui.selectedId = null;
+            if (state.ui.selectedIds.length > 0) {
+                state.components = state.components.filter(c => !state.ui.selectedIds.includes(c.id));
+                state.ui.selectedIds = [];
                 window.dispatchEvent(new CustomEvent('selectionChanged'));
             }
         }
 
-        // COMMAND: Add Stacked Gear (Shift + A)
+        // COMMAND: Add Stacked Gear (Shift + A) - Applies to the first selected item
         if (e.key.toLowerCase() === 'a' && e.shiftKey) {
-            const parentGear = state.components.find(c => c.id === state.ui.selectedId);
-            if (parentGear && parentGear.type === 'gear') {
-                const newGear = new Gear(parentGear.x, parentGear.y);
-                
-                // Inherit the exact axle ID so they move and spin together
-                newGear.properties.axleId = parentGear.properties.axleId;
-                
-                // Make the stacked gear visibly smaller (60% size)
-                newGear.properties.radius = Math.max(10, Math.floor(parentGear.properties.radius * 0.6));
-                newGear.properties.teeth = Math.max(4, Math.floor(parentGear.properties.teeth * 0.6));
-                
-                // Color it slightly darker to separate it visually
-                newGear.properties.color = '#5a6268';
-                
-                state.components.push(newGear);
-                
-                // Select the new gear immediately
-                state.ui.selectedId = newGear.id;
-                window.dispatchEvent(new CustomEvent('selectionChanged'));
+            if (state.ui.selectedIds.length > 0) {
+                const parentGear = state.components.find(c => c.id === state.ui.selectedIds[0]);
+                if (parentGear && parentGear.type === 'gear') {
+                    const newGear = new Gear(parentGear.x, parentGear.y);
+                    newGear.properties.axleId = parentGear.properties.axleId;
+                    newGear.properties.radius = Math.max(10, Math.floor(parentGear.properties.radius * 0.6));
+                    newGear.properties.teeth = Math.max(4, Math.floor(parentGear.properties.teeth * 0.6));
+                    newGear.properties.color = '#5a6268';
+                    
+                    state.components.push(newGear);
+                    state.ui.selectedIds = [newGear.id]; // Select only the new stacked gear
+                    window.dispatchEvent(new CustomEvent('selectionChanged'));
+                }
             }
         }
 
-        // COMMAND: Copy
+        // COMMAND: Copy Array
         if (e.key.toLowerCase() === 'c' && (e.ctrlKey || e.metaKey)) {
-            const comp = state.components.find(c => c.id === state.ui.selectedId);
-            if (comp) {
-                state.clipboard = {
+            const itemsToCopy = state.components.filter(c => state.ui.selectedIds.includes(c.id));
+            if (itemsToCopy.length > 0) {
+                state.clipboard = itemsToCopy.map(comp => ({
                     type: comp.type,
-                    data: JSON.parse(JSON.stringify({ x: comp.x, y: comp.y, properties: comp.properties }))
-                };
+                    x: comp.x,
+                    y: comp.y,
+                    properties: JSON.parse(JSON.stringify(comp.properties))
+                }));
             }
         }
 
-        // COMMAND: Paste
+        // COMMAND: Paste Array
         if (e.key.toLowerCase() === 'v' && (e.ctrlKey || e.metaKey)) {
-            if (state.clipboard && state.clipboard.type === 'gear') {
-                const data = state.clipboard.data;
-                const newGear = new Gear(data.x + 30, data.y + 30);
-                newGear.properties = JSON.parse(JSON.stringify(data.properties));
-                
-                // CRITICAL: A pasted gear must get a brand new axleId, otherwise it teleports!
-                newGear.properties.axleId = generateUUID();
+            if (state.clipboard.length > 0) {
+                const newSelection = [];
+                const axleMap = {}; // Maps old copied axle IDs to freshly generated ones
 
-                state.components.push(newGear);
-                state.ui.selectedId = newGear.id;
+                state.clipboard.forEach(data => {
+                    const newGear = new Gear(data.x + 30, data.y + 30);
+                    newGear.properties = JSON.parse(JSON.stringify(data.properties));
+
+                    // Keep stacked gears linked, but separate from the originals
+                    const oldAxleId = data.properties.axleId;
+                    if (!axleMap[oldAxleId]) {
+                        axleMap[oldAxleId] = generateUUID();
+                    }
+                    newGear.properties.axleId = axleMap[oldAxleId];
+
+                    state.components.push(newGear);
+                    newSelection.push(newGear.id);
+
+                    // Shift clipboard data so spamming Paste cascades down
+                    data.x += 30;
+                    data.y += 30;
+                });
+
+                state.ui.selectedIds = newSelection;
                 window.dispatchEvent(new CustomEvent('selectionChanged'));
-                
-                state.clipboard.data.x += 30;
-                state.clipboard.data.y += 30;
             }
         }
     }
