@@ -5,7 +5,7 @@ export class Renderer {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
-        this.lastTime = performance.now(); // Timing for smooth rotation
+        this.lastTime = performance.now(); 
         
         this.resize();
         window.addEventListener('resize', () => this.resize());
@@ -32,14 +32,11 @@ export class Renderer {
     }
 
     renderLoop(currentTime) {
-        // Calculate time elapsed since last frame
         const deltaTime = currentTime - this.lastTime;
         this.lastTime = currentTime;
 
-        // 1. Run physics/simulation
         Solver.update(deltaTime);
 
-        // 2. Clear and Render
         this.clear();
         
         this.ctx.save();
@@ -49,9 +46,18 @@ export class Renderer {
         if (state.ui.showGrid) this.drawGrid();
         
         this.drawComponents();
+        
+        // Draw Multi-Select Bounding Box
+        if (state.ui.selectionBox) {
+            const { x, y, width, height } = state.ui.selectionBox;
+            this.ctx.fillStyle = 'rgba(0, 168, 255, 0.1)';
+            this.ctx.strokeStyle = 'rgba(0, 168, 255, 0.8)';
+            this.ctx.lineWidth = 1 / state.viewport.zoom;
+            this.ctx.fillRect(x, y, width, height);
+            this.ctx.strokeRect(x, y, width, height);
+        }
 
         this.ctx.restore();
-
         requestAnimationFrame((time) => this.renderLoop(time));
     }
 
@@ -93,7 +99,7 @@ export class Renderer {
 
     drawComponents() {
         state.components.forEach(comp => {
-            const isSelected = (state.ui.selectedId === comp.id);
+            const isSelected = state.ui.selectedIds.includes(comp.id);
             if (comp.render) comp.render(this.ctx, isSelected);
         });
     }
