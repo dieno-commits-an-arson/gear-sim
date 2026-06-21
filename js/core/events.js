@@ -23,13 +23,10 @@ export class EventManager {
         window.addEventListener('pointerup', (e) => this.onPointerUp(e)); 
         this.canvas.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
         this.canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-        // NEW: Global Keyboard Listener
         window.addEventListener('keydown', (e) => this.onKeyDown(e));
     }
 
     onKeyDown(e) {
-        // SAFETY CHECK: Do nothing if the user is typing in a sidebar input field!
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
         // COMMAND: Delete
@@ -41,47 +38,61 @@ export class EventManager {
             }
         }
 
-        // COMMAND: Copy (Ctrl+C or Cmd+C)
+        // COMMAND: Add Stacked Gear (Shift + A)
+        if (e.key.toLowerCase() === 'a' && e.shiftKey) {
+            const parentGear = state.components.find(c => c.id === state.ui.selectedId);
+            if (parentGear && parentGear.type === 'gear') {
+                const newGear = new Gear(parentGear.x, parentGear.y);
+                
+                // Inherit the exact axle ID so they move and spin together
+                newGear.properties.axleId = parentGear.properties.axleId;
+                
+                // Make the stacked gear visibly smaller (60% size)
+                newGear.properties.radius = Math.max(10, Math.floor(parentGear.properties.radius * 0.6));
+                newGear.properties.teeth = Math.max(4, Math.floor(parentGear.properties.teeth * 0.6));
+                
+                // Color it slightly darker to separate it visually
+                newGear.properties.color = '#5a6268';
+                
+                state.components.push(newGear);
+                
+                // Select the new gear immediately
+                state.ui.selectedId = newGear.id;
+                window.dispatchEvent(new CustomEvent('selectionChanged'));
+            }
+        }
+
+        // COMMAND: Copy
         if (e.key.toLowerCase() === 'c' && (e.ctrlKey || e.metaKey)) {
             const comp = state.components.find(c => c.id === state.ui.selectedId);
             if (comp) {
                 state.clipboard = {
                     type: comp.type,
-                    // Deep copy data to break memory references
-                    data: JSON.parse(JSON.stringify({
-                        x: comp.x,
-                        y: comp.y,
-                        properties: comp.properties
-                    }))
+                    data: JSON.parse(JSON.stringify({ x: comp.x, y: comp.y, properties: comp.properties }))
                 };
             }
         }
 
-        // COMMAND: Paste (Ctrl+V or Cmd+V)
+        // COMMAND: Paste
         if (e.key.toLowerCase() === 'v' && (e.ctrlKey || e.metaKey)) {
             if (state.clipboard && state.clipboard.type === 'gear') {
                 const data = state.clipboard.data;
-                
-                // Shift coordinates by 30px so it's visually obvious a clone was made
                 const newGear = new Gear(data.x + 30, data.y + 30);
-                
-                // Deep copy properties onto the new gear instance
                 newGear.properties = JSON.parse(JSON.stringify(data.properties));
                 
+                // CRITICAL: A pasted gear must get a brand new axleId, otherwise it teleports!
+                newGear.properties.axleId = generateUUID();
+
                 state.components.push(newGear);
-                
-                // Auto-select the newly pasted gear
                 state.ui.selectedId = newGear.id;
                 window.dispatchEvent(new CustomEvent('selectionChanged'));
                 
-                // Shift the clipboard data slightly so spamming Paste creates a diagonal line
                 state.clipboard.data.x += 30;
                 state.clipboard.data.y += 30;
             }
         }
     }
 
-    // --- Pointer Events (Unchanged) ---
     onPointerDown(e) {
         if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
             this.isPanning = true;
