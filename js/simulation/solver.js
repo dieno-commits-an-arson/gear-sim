@@ -19,26 +19,26 @@ export class Solver {
             gears.forEach(other => {
                 if (!visited.has(other.id)) {
                     
-                    // CASE 1: They are on the exact same Axle (Compound Gear)
                     if (current.properties.axleId === other.properties.axleId) {
-                        // They spin at the exact same speed and direction
                         other.currentRpm = current.currentRpm;
-                        other.rotation = current.rotation; // Lock their rotation sync perfectly
+                        other.rotation = current.rotation; 
                         
                         visited.add(other.id);
                         queue.push(other);
                         return;
                     }
 
-                    // CASE 2: They are meshed physically tooth-to-tooth
                     const dx = other.x - current.x;
                     const dy = other.y - current.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     const targetDist = current.properties.radius + other.properties.radius;
 
                     if (Math.abs(dist - targetDist) <= 1.0) {
-                        const ratio = current.properties.radius / other.properties.radius;
-                        // They spin in opposite directions
+                        
+                        // MECHANICAL UPDATE: Gear ratio based strictly on teeth
+                        const ratio = current.properties.teeth / other.properties.teeth;
+                        
+                        // Propagate speed in reverse direction
                         other.currentRpm = current.currentRpm * -ratio;
 
                         visited.add(other.id);
