@@ -27,8 +27,18 @@ export class SelectTool {
 
     pointerMove(e, worldPos) {
         if (this.draggingComponent) {
-            this.draggingComponent.x = worldPos.x + this.dragOffset.x;
-            this.draggingComponent.y = worldPos.y + this.dragOffset.y;
+            const newX = worldPos.x + this.dragOffset.x;
+            const newY = worldPos.y + this.dragOffset.y;
+            const axleId = this.draggingComponent.properties.axleId;
+
+            // Move ALL components sharing this axle
+            state.components.forEach(comp => {
+                if (comp.properties.axleId === axleId) {
+                    comp.x = newX;
+                    comp.y = newY;
+                }
+            });
+            
             window.dispatchEvent(new CustomEvent('componentMoved'));
         }
     }
@@ -40,31 +50,36 @@ export class SelectTool {
         this.draggingComponent = null;
     }
 
-    // MAGNETIC SNAPPING LOGIC
     snapToNearestGear() {
         const current = this.draggingComponent;
-        const snapThreshold = 15; // Pixels of magnetic pull
+        const snapThreshold = 15; 
+        const axleId = current.properties.axleId;
 
         for (const other of state.components) {
-            if (other.id === current.id || other.type !== 'gear') continue;
+            // Do not snap to itself, and do not snap to a gear on its own axle!
+            if (other.id === current.id || other.type !== 'gear' || other.properties.axleId === axleId) continue;
 
             const dx = current.x - other.x;
             const dy = current.y - other.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // Perfect meshing distance is the sum of their radiuses
             const targetDistance = current.properties.radius + other.properties.radius;
 
             if (Math.abs(distance - targetDistance) < snapThreshold) {
-                // Calculate the angle between the two gears
                 const angle = Math.atan2(dy, dx);
+                const snapX = other.x + Math.cos(angle) * targetDistance;
+                const snapY = other.y + Math.sin(angle) * targetDistance;
                 
-                // Snap X and Y precisely to the target distance along that vector
-                current.x = other.x + Math.cos(angle) * targetDistance;
-                current.y = other.y + Math.sin(angle) * targetDistance;
+                // Snap ALL components sharing this axle
+                state.components.forEach(comp => {
+                    if (comp.properties.axleId === axleId) {
+                        comp.x = snapX;
+                        comp.y = snapY;
+                    }
+                });
                 
                 window.dispatchEvent(new CustomEvent('componentMoved'));
-                break; // Only snap to one gear at a time
+                break; 
             }
         }
     }
