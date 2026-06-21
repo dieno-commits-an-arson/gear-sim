@@ -11,7 +11,8 @@ export const state = {
     
     ui: {
         activeTool: 'select',
-        selectedId: null,
+        selectedIds: [], // CRITICAL: Now an array to support multi-select
+        selectionBox: null, // Stores dragging box coordinates
         showGrid: true,
         gridSize: 50
     },
@@ -20,8 +21,7 @@ export const state = {
         isPlaying: false
     },
 
-    // NEW: Global clipboard for copy/paste
-    clipboard: null
+    clipboard: [] // Now an array
 };
 
 export function generateUUID() {
