@@ -23,10 +23,10 @@ export class Sidebar {
                     ${comp.type} Geometry
                 </div>
                 
-                <label style="font-size:12px; color:#aaa;">X Coordinate</label>
+                <label style="font-size:12px; color:#aaa;">X Coordinate (Axle)</label>
                 <input type="number" id="prop-x" value="${Math.round(comp.x)}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
                 
-                <label style="font-size:12px; color:#aaa;">Y Coordinate</label>
+                <label style="font-size:12px; color:#aaa;">Y Coordinate (Axle)</label>
                 <input type="number" id="prop-y" value="${Math.round(comp.y)}" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:6px; border-radius: 4px;">
                 
                 <label style="font-size:12px; color:#aaa;">Radius</label>
@@ -57,8 +57,18 @@ export class Sidebar {
             </div>
         `;
 
-        document.getElementById('prop-x').addEventListener('input', (e) => { comp.x = parseFloat(e.target.value) || 0; window.dispatchEvent(new CustomEvent('componentMoved')); });
-        document.getElementById('prop-y').addEventListener('input', (e) => { comp.y = parseFloat(e.target.value) || 0; window.dispatchEvent(new CustomEvent('componentMoved')); });
+        // Update ALL gears on the same axle when coordinates are manually typed
+        document.getElementById('prop-x').addEventListener('input', (e) => { 
+            const val = parseFloat(e.target.value) || 0;
+            state.components.forEach(c => { if(c.properties.axleId === comp.properties.axleId) c.x = val; });
+            window.dispatchEvent(new CustomEvent('componentMoved')); 
+        });
+        
+        document.getElementById('prop-y').addEventListener('input', (e) => { 
+            const val = parseFloat(e.target.value) || 0;
+            state.components.forEach(c => { if(c.properties.axleId === comp.properties.axleId) c.y = val; });
+            window.dispatchEvent(new CustomEvent('componentMoved')); 
+        });
         
         document.getElementById('prop-radius').addEventListener('input', (e) => comp.properties.radius = parseFloat(e.target.value) || 10);
         document.getElementById('prop-teeth').addEventListener('input', (e) => comp.properties.teeth = parseFloat(e.target.value) || 4); 
@@ -71,7 +81,6 @@ export class Sidebar {
 
         document.getElementById('prop-speed').addEventListener('input', (e) => comp.properties.driverSpeed = parseFloat(e.target.value) || 0);
 
-        // NEW: Delete Button Logic
         document.getElementById('btn-delete').addEventListener('click', () => {
             state.components = state.components.filter(c => c.id !== state.ui.selectedId);
             state.ui.selectedId = null;
