@@ -27,7 +27,16 @@ export class EventManager {
     }
 
     onKeyDown(e) {
+        // Stop hotkeys if typing in the sidebar
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        // COMMAND: Tool Selection Hotkeys
+        if (e.key === '1') {
+            window.dispatchEvent(new CustomEvent('changeToolRequest', { detail: 'select' }));
+        }
+        if (e.key === '2') {
+            window.dispatchEvent(new CustomEvent('changeToolRequest', { detail: 'gear' }));
+        }
 
         // COMMAND: Delete
         if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -38,7 +47,7 @@ export class EventManager {
             }
         }
 
-        // COMMAND: Add Stacked Gear (Shift + A) - Applies to the first selected item
+        // COMMAND: Add Stacked Gear (Shift + A)
         if (e.key.toLowerCase() === 'a' && e.shiftKey) {
             if (state.ui.selectedIds.length > 0) {
                 const parentGear = state.components.find(c => c.id === state.ui.selectedIds[0]);
@@ -50,7 +59,7 @@ export class EventManager {
                     newGear.properties.color = '#5a6268';
                     
                     state.components.push(newGear);
-                    state.ui.selectedIds = [newGear.id]; // Select only the new stacked gear
+                    state.ui.selectedIds = [newGear.id]; 
                     window.dispatchEvent(new CustomEvent('selectionChanged'));
                 }
             }
@@ -73,13 +82,12 @@ export class EventManager {
         if (e.key.toLowerCase() === 'v' && (e.ctrlKey || e.metaKey)) {
             if (state.clipboard.length > 0) {
                 const newSelection = [];
-                const axleMap = {}; // Maps old copied axle IDs to freshly generated ones
+                const axleMap = {}; 
 
                 state.clipboard.forEach(data => {
                     const newGear = new Gear(data.x + 30, data.y + 30);
                     newGear.properties = JSON.parse(JSON.stringify(data.properties));
 
-                    // Keep stacked gears linked, but separate from the originals
                     const oldAxleId = data.properties.axleId;
                     if (!axleMap[oldAxleId]) {
                         axleMap[oldAxleId] = generateUUID();
@@ -89,7 +97,6 @@ export class EventManager {
                     state.components.push(newGear);
                     newSelection.push(newGear.id);
 
-                    // Shift clipboard data so spamming Paste cascades down
                     data.x += 30;
                     data.y += 30;
                 });
