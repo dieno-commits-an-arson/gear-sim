@@ -7,17 +7,17 @@ export class Gear {
         this.x = x;
         this.y = y;
         this.rotation = 0;
-        
-        // Dynamic simulation value calculated by solver
         this.currentRpm = 0; 
         
         this.properties = {
             radius: radius,
             teeth: teeth,
             color: '#6c757d',
-            // Mechanical properties
             isDriver: false,
-            driverSpeed: 60 // Base RPM if this gear is the motor
+            driverSpeed: 60,
+            
+            // NEW: Physics binding ID for stacked gears
+            axleId: generateUUID() 
         };
         
         this.connections = [];
@@ -47,7 +47,6 @@ export class Gear {
         }
         ctx.closePath();
 
-        // Drivers get a distinct brass/gold color automatically
         ctx.fillStyle = isDriver ? '#d4a373' : color;
         ctx.fill();
         ctx.lineWidth = 2;
@@ -60,7 +59,6 @@ export class Gear {
         ctx.fill();
         ctx.stroke();
 
-        // Draw a visual marker so we can easily see rotation speed
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(radius * 0.8, 0);
