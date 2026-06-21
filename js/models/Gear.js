@@ -15,8 +15,6 @@ export class Gear {
             color: '#6c757d',
             isDriver: false,
             driverSpeed: 60,
-            
-            // NEW: Physics binding ID for stacked gears
             axleId: generateUUID() 
         };
         
@@ -33,6 +31,9 @@ export class Gear {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
+
+        // VISUAL UPDATE: Add translucency
+        ctx.globalAlpha = 0.85;
 
         const { radius, teeth, color, isDriver } = this.properties;
         const toothDepth = 8;
